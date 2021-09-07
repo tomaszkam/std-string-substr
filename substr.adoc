@@ -123,7 +123,7 @@ This leave it free for implementation to decide, if the optimization should be g
 === Overload with user supplied-allocator:
 
 While writing the paper, we have noticed that specification of the `substr()` requires returned object to use default constructed allocator.
-This means that invocation of this function is ill-formed for the basic_string instance with non-default constructing allocator, for example for invited `memory_pool_allocator<char>` that can be only constructed from reference to the pool, the following are ill-formed:
+This means that invocation of this function is ill-formed for the `basic_string` instance with non-default constructing allocator, for example for invited `memory_pool_allocator<char>` that can be only constructed from reference to the pool, the following are ill-formed:
 
 [source, cpp]
 ----
@@ -144,14 +144,15 @@ We would like to see LEWG guidance on this change.
 
 == Concerns on ABI stability
 
-Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affecting the
+Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
 mangling of the name, thus causing ABI break.
 
-For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work withtout errors.
+For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work without errors.
 For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
 
 
-This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
+This is not a novel technique, as it has been explained by ARG (the ABI Review group).
+Similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
 
 == QOI ???
 
