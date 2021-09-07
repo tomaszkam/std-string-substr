@@ -1,11 +1,13 @@
 = `std::string::substr() &&`
 :nofooter:
 :!webfonts:
+:sectnums: // numbered headings
+:source-highlighter: pygments
 
 |===
-|Document number: | Nnnnn=yy-nnnn
-|Date:            |	2021-09-02 +
-|Project:         | Programming Language C++, Library Working Group +
+|Document number: | PxxxxR0
+|Date:            | 2021-09-07
+|Project:         | Programming Language C++, Library Working Group
 |Reply-to:        | federico.kircheis@gmail.com
 |===
 
@@ -94,6 +96,64 @@ While a breaking change is generally bad:
 	* I do not think there exists code like `std::move(foo).substr(...)` in the wild
 	* Even if such code exists, the intention of the author was very probably to tell the compiler that he is not interested in the value of `foo` anymore, as it is normally the case when moving a variable. In other words, with this proposal the user is getting what he asked for.
 
+
+=== Note on the propagation of the allocator
+
+`basic_string` is one of the allocator-container, which means that any memory resource used by this class need to be acquired and released to from the associated allocator instance. This imposes some limitation on the behavior of the proposed overload.. For example in:
+
+[source, cpp]
+----
+std::pmr::string s1 = ....;
+std::pmr::string s2 = std::move(s1).substr();
+----
+
+For `s2` to be able to steal memory from `s1`, we need to be sure that the allocators used by both objects are equal (`s1.get_allocator() == s2.get_allocator()`).
+This is trivially achievable for the case of the for the allocators that are always equal (`std::allocator_traits<A>::is_always_equal::value` is true), including most common case of the stateless `std::allocator` and implementation can unconditionally steal any allocated memory in such situation.
+
+Moreover, the proposed overload can still provide some optimization in case of the stateful allocators, where `s2.get_allocator` (which is required to be default constructed) happens to be the same as allocator of the source `s1`.
+In any remaining cases, behavior of this overload is same as existing const version, and as such it does not add any overhead.
+
+This paper, recommends implementation to avoid additional memory allocation when possible (note if no-allocation would be performed, there is nothing to avoid), however it does not require so.
+This leave it free for implementation to decide, if the optimization should be guarded by:
+
+	* compile time check of `std::allocator_traits<A>::is_always_equal`
+	* runtime comparison of allocators instance (addition comparison cost).
+
+
+=== Overload with user supplied-allocator:
+
+While writing the paper, we have noticed that specification of the `substr()` requires returned object to use default constructed allocator.
+This means that invocation of this function is ill-formed for the basic_string instance with non-default constructing allocator, for example for invited `memory_pool_allocator<char>` that can be only constructed from reference to the pool, the following are ill-formed:
+
+[source, cpp]
+----
+memory_pool pool = ...;
+std::basic_string<char, std::char_traits<char>, memory_pool_allocator<char>> s1(memory_pool_allocator<char>(pool));
+auto s2 = s1.substr();
+----
+
+This could be address by adding Allocator parameters to `substr()`` overload that accepts allocator to be used as parameter:
+
+[source, cpp]
+----
+constexpr basic_string substr(size_type pos, const Allocator& alloc = Allocator()) const;
+constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc = Allocator()) const;
+----
+
+We would like to see LEWG guidance on this change.
+
+== Concerns on ABI stability
+
+Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affecting the
+mangling of the name, thus causing ABI break.
+
+For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work withtout errors.
+For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
+
+
+This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
+
+== QOI ???
 
 == Technical Specifications
 
