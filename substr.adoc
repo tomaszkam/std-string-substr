@@ -1,0 +1,130 @@
+= `std::string::substr() &&`
+:nofooter:
+:!webfonts:
+
+|===
+|Document number: | Nnnnn=yy-nnnn
+|Date:            |	2021-09-02 +
+|Project:         | Programming Language C++, Library Working Group +
+|Reply-to:        | federico.kircheis@gmail.com
+|===
+
+// http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf
+
+== Motivation
+
+Since {cpp}11 the {cpp} language supports move semantic.
+All classes where it made sense where updated with move constructors and move assignment operators.
+This made it possible to take advantage of rvalues and "steal" resources, thus avoiding, for example, unnecessary costly copies.
+
+Some classes that came in later revisions of the language also take advantage of move semantic for member functions, like `std::optional::value` and `std::optional::value_or`.
+
+In the case of `std::string::substr()`, it is possible to take advantage of move semantic to.
+
+Consider following two code snippets:
+//, found thanks to http://codesearch.isocpp.org[codesearch]:
+
+[source, cpp]
+----
+// example 1
+benchmark = std::string(argv[i]).substr(12);
+
+// example 2
+name_ = obs.stringValue().substr(0,32);
+----
+
+In the first example, `argv[1]` is copied in a temporary string, then `substr` creates a new object.
+In this case one could use `string_view` to avoid the unnecessary copy, but changing already working code has a cost too.
+
+In the second example, if `stringValue()` returns an `std::string` by value, the user of that API cannot use a `string_view` to avoid an unnecessary copy, like in the first case.
+
+
+If `std::string` would have an overload for `substr() &&`, in both cases the standard library could avoid unnecessary work, and instead of copying the data "steal" it.
+
+It is true that adding a new overload increases the already extremely high number of member functions of `std::string`.
+
+On the other hand most users do not need to know it's existence to take advantage of the provided optimization.
+
+For users aware of the overload, they can move a string in order to "steal" it's storage in a natural way:
+
+[source, cpp]
+----
+std::string foo = ...;
+std::string bar = std::move(foo).substr(...);
+----
+
+
+== Design Decisions
+
+This is purely a library extension.
+
+
+Currently `substr` is defined as
+
+
+[source, cpp]
+----
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) const;
+----
+
+This paper proposes to define following overloads
+
+[source, cpp]
+----
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) const &;
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
+----
+
+
+Other overloads (`constexpr basic_string substr(size_type pos = 0, size_type n = npos) const &&;` and `constexpr basic_string substr(size_type pos = 0, size_type n = npos) &;`) are not necessary.
+
+Notice that the current proposal is a breaking change, as following snippet of code might work differently if this paper gets accepted:
+
+[source, cpp]
+----
+std::string foo = ...;
+std::string bar = std::move(foo).substr(...);
+----
+
+
+Until {cpp}20, `foo` wont change it's value, after this paper, the state of `foo` would be in a "valid but unspecified state".
+
+While a breaking change is generally bad:
+
+	* I do not think there exists code like `std::move(foo).substr(...)` in the wild
+	* Even if such code exists, the intention of the author was very probably to tell the compiler that he is not interested in the value of `foo` anymore, as it is normally the case when moving a variable. In other words, with this proposal the user is getting what he asked for.
+
+
+== Technical Specifications
+
+Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf[N4892]):
+
+
+Apply following changes to `[strings]`
+
+
+[subs=+quotes]
+----
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [underline]#&#;
+[underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
+----
+
+Apply following changes to `[string.substr]`
+
+
+[subs=+quotes]
+----
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [underline]#&#;
+[underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
+----
+
+_Effects_: Determines the effective length `rlen` of the string to copy as the smaller of `n` and `size() - pos`. +
+_Returns_: `basic_­string(data()+pos, rlen)`. +
+_Throws_: `out_­of_­range` if `pos > size()`. +
+[underline]#_Recommended practice_: +
+For the second overload, implementations should avoid unnecessary copies and allocations, if `r.get_allocator() == get_allocator()` is `true`, where `r` is value returned from the call. +
+_Remarks_: `*this` is in valid but unspecified state after invocation of the second overload.#
+
+== Acknowledgements
+
+A big thank you to all those giving me feedback for this paper, especially Tomasz Kamiński for helping me writing it.
