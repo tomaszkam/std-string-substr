@@ -145,6 +145,13 @@ While a breaking change is generally bad:
 	* I do not think there exists code like `std::move(foo).substr(...)` in the wild
 	* Even if such code exists, the intention of the author was very probably to tell the compiler that he is not interested in the value of `foo` anymore, as it is normally the case when moving a variable. In other words, with this proposal the user is getting what he asked for.
 
+As `std::string` also has two constructor that matches the functionality of `substr`, this paper proposes to update those to:
+
+[source, cpp]
+----
+constexpr basic_string( basic_string&& other, size_type pos, const Allocator& alloc = Allocator() );
+constexpr basic_string( basic_string&& other, size_type pos, size_type count, const Allocator& alloc = Allocator() );
+----
 
 === Note on the propagation of the allocator
 
@@ -215,9 +222,32 @@ Apply following changes to `[strings]`
 
 [subs=+quotes]
 ----
+constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
+[underline]#constexpr basic_string( basic_string&& other, size_type pos, const Allocator& alloc = Allocator() );#
+constexpr basic_string(const basic_string& str, size_type pos, size_type n,const Allocator& a = Allocator());
+[underline]#constexpr basic_string( basic_string&& other, size_type pos, size_type count, const Allocator& alloc = Allocator() );#
+----
+
+and
+
+[subs=+quotes]
+----
 constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [underline]#&#;
 [underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
 ----
+
+Apply following changes to `[string.cons]`
+
+[subs=+quotes]
+----
+constexpr basic_string(const basic_string& str, size_type pos,const Allocator& a = Allocator());
+[underline]#constexpr basic_string( basic_string&& other, size_type pos, const Allocator& alloc = Allocator() );#
+constexpr basic_string(const basic_string& str, size_type pos, size_type n,const Allocator& a = Allocator());
+[underline]#constexpr basic_string( basic_string&& other, size_type pos, size_type count, const Allocator& alloc = Allocator() );#
+----
+
+_Effects_: Let `n` be `npos` for the first overload. Equivalent to: `basic_string(basic_string_view<charT, traits>(str).substr(pos, n), a)`.
+
 
 Apply following changes to `[string.substr]`
 
