@@ -110,8 +110,8 @@ std::pmr::string s2 = std::move(s1).substr();
 For `s2` to be able to steal memory from `s1`, we need to be sure that the allocators used by both objects are equal (`s1.get_allocator() == s2.get_allocator()`).
 This is trivially achievable for the case of the for the allocators that are always equal (`std::allocator_traits<A>::is_always_equal::value` is true), including most common case of the stateless `std::allocator` and implementation can unconditionally steal any allocated memory in such situation.
 
-Moreover, the proposed overload can still provide some optimization in case of the stateful allocators, where `s2.get_allocator` (which is required to be default constructed) happens to be the same as allocator of the source `s1`.
-In any remaining cases, behavior of this overload is same as existing const version, and as such it does not add any overhead.
+Moreover, the proposed overload can still provide some optimization in case of the stateful allocators, where `s2.get_allocator()` (which is required to be default constructed) happens to be the same as allocator of the source `s1`.
+In any remaining cases, behavior of this overload should follow existing const version, and as such it does not add any overhead.
 
 This paper, recommends implementation to avoid additional memory allocation when possible (note if no-allocation would be performed, there is nothing to avoid), however it does not require so.
 This leave it free for implementation to decide, if the optimization should be guarded by:
