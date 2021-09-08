@@ -102,6 +102,21 @@ std::string foo = ...;
 std::string bar = std::move(foo).substr(...);
 ----
 
+
+=== Couldn't a library vendor provide such overload as QOI?
+
+No, because it is a breaking change.
+Fur such library, following code would misbehave
+
+[source, cpp]
+----
+std::string foo = ...;
+std::string bar = std::move(foo).substr(...);
+----
+
+`[res.on.arguments]` says that a programmer can't expect an object referred to by an rvalue reference to remain untouched.
+But there is currently no rvalue reference in `substr()`, it would be added by this paper.
+
 == Concerns on ABI stability
 
 Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
