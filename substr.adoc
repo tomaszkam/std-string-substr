@@ -111,8 +111,7 @@ For a library it is possible to continue to define the old symbol, so that alrea
 For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
 
 
-This is not a novel technique, as it has been explained by ARG (the ABI Review group).
-Similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
+This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408].
 
 == Design Decisions
 
@@ -225,6 +224,8 @@ constexpr basic_string& append(const basic_string& str, size_type pos, size_type
 But in this case, because of the interaction of two string instances, the benefits from stealing the resource of `str` are less clear.
 Supposing both string instances use the same allocator, an implementation should compare the capacity of `str` and `this`, and evaluate if moving `str.size()` elements is less costly than copying them.
 This would make the implementation of `append` less obvious, and the performance implications are difficult to predict.
+
+The author is not aware of other functions that could benefit from a `&&` overload.
 
 == Technical Specifications
 
