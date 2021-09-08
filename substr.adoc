@@ -8,7 +8,7 @@
 |Document number: | PxxxxR0
 |Date:            | 2021-09-07
 |Project:         | Programming Language C++, Library Working Group
-|Reply-to:        | federico.kircheis@gmail.com
+|Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
 
 == Motivation
@@ -30,7 +30,7 @@ a|
 ----
 auto foo() -> std::string;
 
-auto b = foo.substr(/* */);
+auto b = foo().substr(/* */);
 ----
 | `foo()` returns a temporary `std::string`. `.substr` creates a new string and copies the relevant content. At last the temporary string returned by foo is released.
 | `foo()` returns a `std::string`. `.substr` implementation can reuse the storage of the string returned by foo and leave it in a valid but unspecified state. At last the temporary string returned by `foo()` is released.
@@ -94,6 +94,8 @@ It is true that adding a new overload increases the already extremely high numbe
 
 On the other hand most users do not need to know it's existence to take advantage of the provided optimization.
 
+Thus this paper is not extending API surface, there is no names or behavior to be learned by user, and we just get extension that follows established language convection.
+
 For users aware of the overload, they can move a string in order to "steal" it's storage in a natural way:
 
 [source, cpp]
@@ -116,17 +118,6 @@ std::string bar = std::move(foo).substr(...);
 
 `[res.on.arguments]` says that a programmer can't expect an object referred to by an rvalue reference to remain untouched.
 But there is currently no rvalue reference in `substr()`, it would be added by this paper.
-
-== Concerns on ABI stability
-
-Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
-mangling of the name, thus causing ABI break.
-
-For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work without errors.
-For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
-
-
-This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408].
 
 == Design Decisions
 
@@ -168,7 +159,7 @@ While a breaking change is generally bad:
 	* I do not think there exists code like `std::move(foo).substr(...)` in the wild
 	* Even if such code exists, the intention of the author was very probably to tell the compiler that he is not interested in the value of `foo` anymore, as it is normally the case when using `std::move` on a variable. In other words, with this proposal the user is getting what he asked for.
 
-As `std::string` also has two constructor that matches the functionality of `substr`, this paper proposes to update those to:
+The standard library proposes two way for creating a "substring" instance, either by calling "substr" method or via constructor that accepts (str, pos, len). We see both of them as different spelling of same functionality, and believe they behavior should remaining consistent. Thus we propose to add rvalue overload constructors.
 
 [source, cpp]
 ----
@@ -221,8 +212,8 @@ constexpr basic_string substr(size_type pos, const Allocator& alloc = Allocator(
 constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc = Allocator()) const;
 ----
 
-We would like to see LEWG guidance on this change.
-
+While the authors think that this additional feature is related to proposed changes, it is orthogonal to them and could be handled as separate paper.
+We seek LEWG guidance if that functionality should be included in the paper.
 
 === Are they any other function of `std::string` that would benefit from a `&&` overload
 
@@ -240,7 +231,20 @@ But in this case, because of the interaction of two string instances, the benefi
 Supposing both string instances use the same allocator, an implementation should compare the capacity of `str` and `this`, and evaluate if moving `str.size()` elements is less costly than copying them.
 This would make the implementation of `append` less obvious, and the performance implications are difficult to predict.
 
-The author is not aware of other functions that could benefit from a `&&` overload.
+For those reasons, the authors does not propose to add new overloads for `append` and `operator+`.
+
+The authors are not aware of other functions that could benefit from a `&&` overload.
+
+=== Concerns on ABI stability
+
+Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
+mangling of the name, thus causing ABI break.
+
+For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work without errors.
+For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
+
+
+This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408].
 
 == Technical Specifications
 
