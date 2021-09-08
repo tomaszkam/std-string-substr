@@ -11,8 +11,6 @@
 |Reply-to:        | federico.kircheis@gmail.com
 |===
 
-// http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf
-
 == Motivation
 
 
@@ -35,7 +33,7 @@ auto foo() -> std::string;
 auto b = foo.substr(/* */);
 ----
 | `foo()` returns a temporary `std::string`. `.substr` creates a new string and copies the relevant content. At last the temporary string returned by foo is released.
-| `foo()` returns a `std::string`, `.substr` implementation can reuse the storage of the string returned by foo and leave it in a valid but unspecified state. The temporary string returned by `foo()` is released.
+| `foo()` returns a `std::string`. `.substr` implementation can reuse the storage of the string returned by foo and leave it in a valid but unspecified state. At last the temporary string returned by `foo()` is released.
 
 The different behavior cannot be observed in {cpp}.
 
@@ -143,7 +141,7 @@ Until {cpp}20, `foo` wont change it's value, after this paper, the state of `foo
 While a breaking change is generally bad:
 
 	* I do not think there exists code like `std::move(foo).substr(...)` in the wild
-	* Even if such code exists, the intention of the author was very probably to tell the compiler that he is not interested in the value of `foo` anymore, as it is normally the case when moving a variable. In other words, with this proposal the user is getting what he asked for.
+	* Even if such code exists, the intention of the author was very probably to tell the compiler that he is not interested in the value of `foo` anymore, as it is normally the case when using `std::move` on a variable. In other words, with this proposal the user is getting what he asked for.
 
 As `std::string` also has two constructor that matches the functionality of `substr`, this paper proposes to update those to:
 
@@ -155,7 +153,9 @@ constexpr basic_string( basic_string&& other, size_type pos, size_type count, co
 
 === Note on the propagation of the allocator
 
-`basic_string` is one of the allocator-container, which means that any memory resource used by this class need to be acquired and released to from the associated allocator instance. This imposes some limitation on the behavior of the proposed overload.. For example in:
+`basic_string` is one of the allocator-container, which means that any memory resource used by this class need to be acquired and released to from the associated allocator instance.
+This imposes some limitation on the behavior of the proposed overload.
+For example in:
 
 [source, cpp]
 ----
@@ -209,8 +209,6 @@ For example, it is possible to use asm to define the old mangled name as an alia
 
 This is not a novel technique, as it has been explained by ARG (the ABI Review group).
 Similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
-
-== QOI ???
 
 == Technical Specifications
 
