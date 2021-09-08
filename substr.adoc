@@ -102,6 +102,17 @@ std::string foo = ...;
 std::string bar = std::move(foo).substr(...);
 ----
 
+== Concerns on ABI stability
+
+Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
+mangling of the name, thus causing ABI break.
+
+For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work without errors.
+For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
+
+
+This is not a novel technique, as it has been explained by ARG (the ABI Review group).
+Similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
 
 == Design Decisions
 
@@ -198,17 +209,22 @@ constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc
 
 We would like to see LEWG guidance on this change.
 
-== Concerns on ABI stability
 
-Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
-mangling of the name, thus causing ABI break.
+=== Are they any other function of `std::string` that would benefit from a `&&` overload
 
-For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work without errors.
-For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
+The member function `append` and `operator+=` take `std::string` as const-ref parameter
 
+[source, cpp]
+----
+constexpr basic_string& operator+=( const basic_string& str );
 
-This is not a novel technique, as it has been explained by ARG (the ABI Review group).
-Similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408] and https://wg21.link/p0616[P0616].
+constexpr basic_string& append(const basic_string& str);
+constexpr basic_string& append(const basic_string& str, size_type pos, size_type n = npos);
+----
+
+But in this case, because of the interaction of two string instances, the benefits from stealing the resource of `str` are less clear.
+Supposing both string instances use the same allocator, an implementation should compare the capacity of `str` and `this`, and evaluate if moving `str.size()` elements is less costly than copying them.
+This would make the implementation of `append` less obvious, and the performance implications are difficult to predict.
 
 == Technical Specifications
 
