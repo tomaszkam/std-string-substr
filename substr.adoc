@@ -204,12 +204,12 @@ std::basic_string<char, std::char_traits<char>, memory_pool_allocator<char>> s1(
 auto s2 = s1.substr();
 ----
 
-This could be address by adding Allocator parameters to `substr()`` overload that accepts allocator to be used as parameter:
+This could be address by adding Allocator parameters to `substr()` overload that accepts allocator to be used as parameter:
 
 [source, cpp]
 ----
-constexpr basic_string substr(size_type pos, const Allocator& alloc = Allocator()) const;
-constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc = Allocator()) const;
+constexpr basic_string substr(size_type pos, const Allocator& alloc) const;
+constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc) const;
 ----
 
 While the authors think that this additional feature is related to proposed changes, it is orthogonal to them and could be handled as separate paper.
