@@ -35,8 +35,6 @@ auto b = foo().substr(/* */);
 | `foo()` returns a temporary `std::string`. `.substr` creates a new string and copies the relevant content. At last the temporary string returned by foo is released.
 | `foo()` returns a `std::string`. `.substr` implementation can reuse the storage of the string returned by foo and leave it in a valid but unspecified state. At last the temporary string returned by `foo()` is released.
 
-The different behavior cannot be observed in {cpp}.
-
 
 a|
 [source, cpp]
@@ -44,9 +42,7 @@ a|
 auto a = std::string(/* */).substr(/* */);
 ----
 | A temporary `std::string` is created, on that instance `.substr` creates a new string and copies the relevant content. At last the temporary string is released.
-| A temporary `std::string` is created, on that instance `.substr` implementation can reuse the storage of the and leave the temporary string in a valid but unspecified state. At last the temporary string is released.
-
-The different behavior cannot be observed in {cpp}.
+| A temporary `std::string` is created, on that instance `.substr` implementation can reuse the storage and leave the temporary string in a valid but unspecified state. At last the temporary string is released.
 
 
 a|
@@ -56,9 +52,8 @@ auto a = std::string(/* */);
 auto b = std::move(a).substr(/* */);
 ----
 | Value of `a` does not change
-| As `a` is casted to anxvalue, the implementation of `.substr` can reuse the storage and leave `this` string in a valid but unspecified state.
+| As `a` is casted to an xvalue, the implementation of `.substr` can reuse the storage and leave `this` string in a valid but unspecified state.
 
-The different behavior can be observed in {cpp}.
 
 |===
 
@@ -117,7 +112,8 @@ std::string bar = std::move(foo).substr(...);
 ----
 
 `[res.on.arguments]` says that a programmer can't expect an object referred to by an rvalue reference to remain untouched.
-But there is currently no rvalue reference in `substr()`, it would be added by this paper.
+But there is currently no rvalue reference in `substr()`.
+This paper is proposing to add it.
 
 == Design Decisions
 
@@ -251,15 +247,15 @@ This is not a novel technique, as it has been explained by the ARG (ABI Review g
 Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf[N4892]):
 
 
-Apply following changes to `[strings]`
+Apply following modifications to definition of `basic_string class template in [basic.string.general] General`.
 
 
 [subs=+quotes]
 ----
 constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
-[underline]#constexpr basic_string( basic_string&& other, size_type pos, const Allocator& alloc = Allocator() );#
-constexpr basic_string(const basic_string& str, size_type pos, size_type n,const Allocator& a = Allocator());
-[underline]#constexpr basic_string( basic_string&& other, size_type pos, size_type count, const Allocator& alloc = Allocator() );#
+constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator());
+[underline]#constexpr basic_string( basic_string&& str, size_type pos, const Allocator& alloc = Allocator() );#
+[underline]#constexpr basic_string( basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator() );#
 ----
 
 and
@@ -270,35 +266,53 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [unde
 [underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
 ----
 
-Apply following changes to `[string.cons]`
+Replace the definition of the corresponding constructor `[string.cons] Constructors and assignment operators`
+
+Wording note:
+We no longer define this constructors in terms of being equivalent to corresponding construction from `basic_string_view`, as that would prevent reuse of the memory, that we want to allow.
+The use of "prior the call", are not necessary for `const&`, but allow us to merge the wording.
 
 [subs=+quotes]
 ----
-constexpr basic_string(const basic_string& str, size_type pos,const Allocator& a = Allocator());
-[underline]#constexpr basic_string( basic_string&& other, size_type pos, const Allocator& alloc = Allocator() );#
-constexpr basic_string(const basic_string& str, size_type pos, size_type n,const Allocator& a = Allocator());
-[underline]#constexpr basic_string( basic_string&& other, size_type pos, size_type count, const Allocator& alloc = Allocator() );#
+constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
+constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator());
+[underline]#constexpr basic_string( basic_string&& str, size_type pos, const Allocator& alloc = Allocator() );#
+[underline]#constexpr basic_string( basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator() );#
 ----
 
-_Effects_: Let `n` be `npos` for the first overload. Equivalent to: `basic_string(basic_string_view<charT, traits>(str).substr(pos, n), a)`.
+[line-through]#_Effects_: Let `n` be `npos` for the first overload. Equivalent to: `basic_string(basic_string_view<charT, traits>(str).substr(pos, n), a)`.# +
+[underline]#Let:#
+
+	* [underline]#`s` be the value of `str` prior this call,#
+	* [underline]#`rlen` be smaller of `n` and `s.size() - pos`, for overloads that define parameter `n`, and `s.size() - pos` otherwise.#
+
+[underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, s + rlen)` +
+_Throws_: `out_­of_­range` if `pos > s.size()` +
+_Remarks_: The `str` is in valid but unspecified state, after invocation of third and fourth overloads. +
+_Recommended practice_: For third and fourth overloads implementations should avoid unnecessary copies and allocations, if `s.get_allocator() == a` is `true`.#
 
 
-Apply following changes to `[string.substr]`
+Apply following changes to `[string.substr] basic_­string​::​substr`.
 
 
 [subs=+quotes]
 ----
 constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [underline]#&#;
+----
+
+[line-through]#_Effects_: Determines the effective length `rlen` of the string to copy as the smaller of n and `size() - pos`.# +
+[line-through]#_Returns_: `basic_­string(data()+pos, rlen)`.# +
+[line-through]#_Throws_: `out_­of_­range` if `pos > size()`.# +
+[underline]#_Effects_: Equivalent to: `return basic_string(*this, pos, n);`#
+
+[subs=+quotes]
+----
 [underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
 ----
 
-_Effects_: Determines the effective length `rlen` of the string to copy as the smaller of `n` and `size() - pos`. +
-_Returns_: `basic_­string(data()+pos, rlen)`. +
-_Throws_: `out_­of_­range` if `pos > size()`. +
-[underline]#_Recommended practice_: +
-For the second overload, implementations should avoid unnecessary copies and allocations, if `r.get_allocator() == get_allocator()` is `true`, where `r` is value returned from the call. +
-_Remarks_: `*this` is in valid but unspecified state after invocation of the second overload.#
+[underline]#_Effects_: Equivalent to: `return basic_string(std::move(*this), pos, n);`.#
+
 
 == Acknowledgements
 
-A big thank you to all those giving me feedback for this paper, especially Tomasz Kamiński for helping me writing it.
+A big thank you to all those giving feedback for this paper.
