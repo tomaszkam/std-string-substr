@@ -5,14 +5,13 @@
 :source-highlighter: pygments
 
 |===
-|Document number: | PxxxxR0
-|Date:            | 2021-09-07
+|Document number: | D2438R0
+|Date:            | 2021-09-10
 |Project:         | Programming Language C++, Library Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
 
-== Motivation
-
+== Before/After table
 
 [cols="3"]
 |===
@@ -56,6 +55,8 @@ auto b = std::move(a).substr(/* */);
 
 
 |===
+
+== Motivation
 
 Since {cpp}11 the {cpp} language supports move semantic.
 All classes where it made sense where updated with move constructors and move assignment operators.
