@@ -5,8 +5,8 @@
 :source-highlighter: pygments
 
 |===
-|Document number: | D2438R0
-|Date:            | 2021-09-10
+|Document number: | P2438R0
+|Date:            | 2021-09-14
 |Project:         | Programming Language C++, Library Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
@@ -287,10 +287,10 @@ constexpr basic_string(const basic_string& str, size_type pos, size_type n, cons
 	* [underline]#`s` be the value of `str` prior this call,#
 	* [underline]#`rlen` be smaller of `n` and `s.size() - pos`, for overloads that define parameter `n`, and `s.size() - pos` otherwise.#
 
-[underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, s + rlen)` +
+[underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, rlen)` +
 _Throws_: `out_­of_­range` if `pos > s.size()` +
-_Remarks_: The `str` is in valid but unspecified state, after invocation of third and fourth overloads. +
-_Recommended practice_: For third and fourth overloads implementations should avoid unnecessary copies and allocations, if `s.get_allocator() == a` is `true`.#
+_Remarks_: The `str` is in valid but unspecified state, after invocation of either third or fourth overload. +
+_Recommended practice_: For third and fourth overload implementations should avoid unnecessary copies and allocations, if `s.get_allocator() == a` is `true`.#
 
 
 Apply following changes to `[string.substr] basic_­string​::​substr`.
