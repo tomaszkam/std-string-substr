@@ -56,6 +56,15 @@ auto b = std::move(a).substr(/* */);
 
 |===
 
+
+== Revision history
+
+=== Revision 1
+
+* Included implementation experience section
+* Discussion on change to existing `const` overload in light of https://wg21.link/p1787[P1787R6: Declarations and where to find them]
+* Expanded section of `substr` with user-suplied allocator.
+
 == Motivation
 
 Since {cpp}11 the {cpp} language supports move semantic.
@@ -250,8 +259,8 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const;
 constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
 ----
 
-However, this is not reflected in the https://godbolt.org/z/cMzK3sdsn[behavior of major compiler], thus it is impossible to get implementation experience 
-for such change, nor validate that the overload resolution are desired. As consequence, we propose to change the existing overload.
+However, this is not reflected in the current https://godbolt.org/z/cMzK3sdsn[behavior of major compiler], thus it is impossible to get implementation experience 
+for such change, nor validate that the overload resolution works as desired. As consequence, we propose to change the existing overload.
 
 [source, cpp]
 ----
