@@ -6,8 +6,8 @@
 
 |===
 |Document number: | D2438R1
-|Date:            | 2021-11-16
-|Project:         | Programming Language C++, Library Working Group
+|Date:            | 2021-11-18
+|Project:         | Programming Language C++, Library Evolution Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
 
@@ -61,6 +61,7 @@ auto b = std::move(a).substr(/* */);
 
 === Revision 1
 
+* Corrected target audience (LEWG instead of LWG)
 * Included implementation experience section
 * Discussion on change to existing `const` overload in light of https://wg21.link/p1787[P1787R6: Declarations and where to find them]
 * Expanded section of `substr` with user-suplied allocator.
@@ -226,7 +227,7 @@ auto s2 = pool_string(s1, 2, 10, memory_pool_allocator<char>(pool));
 ----
 
 While the authors aggree that using `substr` may provide a more convinient interface, we believe that providing additional `substr` overload that accepts allocator, 
-is orthogonal to proposed changes and could be handled as separate paper.
+is orthogonal to proposed changes and should be handled as separate paper.
 
 === Are they any other function of `std::string` that would benefit from a `&&` overload
 
@@ -259,7 +260,7 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const;
 constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
 ----
 
-However, this is not reflected in the current https://godbolt.org/z/cMzK3sdsn[behavior of major compiler], thus it is impossible to get implementation experience 
+However, this is not reflected in the current https://godbolt.org/z/cMzK3sdsn[behavior of major compilers], thus it is impossible to get implementation experience 
 for such change, nor validate that the overload resolution works as desired. As consequence, we propose to change the existing overload.
 
 [source, cpp]
@@ -271,7 +272,7 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
 Note, that standard-library implementation that ships with compiler that supports this relaxation of the overloading for the member functions,
 has freedom to preserve `const` instead of `const&` per https://eel.is/c++draft/namespace.std#6[[namespace.std] p6] in case if the behavior of this overload
 is indeed the same.
-In contrast preserving `const` overload, will bake any unintended (and unlikely) difference in the behavior.
+In contrast preserving `const` overload, will bake any unintended (but unlikely) difference in the behavior.
 
 === Concerns on ABI stability
 
@@ -287,9 +288,11 @@ This is not a novel technique, as it has been explained by the ARG (ABI Review g
 
 The changes proposed in the paper were implemented by the authors in the libcxx and passed are test in the test suite.
 The implementation of the rvalue-constructor is moving the buffer if the:
+
   * selected substring is to long to use SSO
   * allocators are equal (checked at runtime)
-This reflects the behavior of the move constructor for this implementation.
+
+This reflects the behavior of the rvalue with allocator constructor for this implementation.
 
 The implementation experience does not cover introduction of additional alias nor preservation of `const` overload, required to preserve ABI compatibility.
 
@@ -339,7 +342,7 @@ constexpr basic_string(const basic_string& str, size_type pos, size_type n, cons
 [underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, rlen)` +
 _Throws_: `out_­of_­range` if `pos > s.size()` +
 _Remarks_: The `str` is in valid but unspecified state, after invocation of either third or fourth overload. +
-_Recommended practice_: For third and fourth overload implementations should avoid unnecessary copies and allocations, if `s.get_allocator() == a` is `true`.#
+_Recommended practice_: For third and fourth overload implementations should avoid unnecessary allocations, if `s.get_allocator() == a` is `true`.#
 
 
 Apply following changes to `[string.substr] basic_­string​::​substr`.
