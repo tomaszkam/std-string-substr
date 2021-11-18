@@ -61,10 +61,11 @@ auto b = std::move(a).substr(/* */);
 
 === Revision 1
 
-* Corrected target audience (LEWG instead of LWG)
-* Included implementation experience section
-* Discussion on change to existing `const` overload in light of https://wg21.link/p1787[P1787R6: Declarations and where to find them]
+* Corrected target audience (LEWG instead of LWG).
+* Included implementation experience section.
+* Discussion on change to existing `const` overload in light of https://wg21.link/p1787[P1787R6: Declarations and where to find them].
 * Expanded section of `substr` with user-suplied allocator.
+* Rebased wording on http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902].
 
 == Motivation
 
@@ -226,8 +227,8 @@ Desired effect may be already achieved via "substring" constructor, that is also
 auto s2 = pool_string(s1, 2, 10, memory_pool_allocator<char>(pool));
 ----
 
-While the authors aggree that using `substr` may provide a more convinient interface, we believe that providing additional `substr` overload that accepts allocator, 
-is orthogonal to proposed changes and should be handled as separate paper.
+While the authors aggree that using `substr` may provide a more convinient interface,
+we belive that introduction of allocator accepting `substr` oveloads should be handled as separate paper.
 
 === Are they any other function of `std::string` that would benefit from a `&&` overload
 
@@ -251,8 +252,9 @@ The authors are not aware of other functions that could benefit from a `&&` over
 
 === Modifying existing `const` overload
 
-One of the effects of the https://wg21.link/p1787[P1787R6: Declarations and where to find them] omnibus paper, is relaxation of the rules for overloading of the member function
-based on the `cv` and `ref` qualifiers. To best of the authors knowlede, current wording allows following declarations to coexits in the `basic_string` class:
+
+One of the effects of the https://wg21.link/p1787[P1787R6: Declarations and where to find them] omnibus paper, is the relaxation of the rules for overloading of the member function
+based on the `cv` and `ref` qualifiers. To the best of the authors' knowledge, current wording allows the following declarations to coexist in the `basic_string` class:
 
 [source, cpp]
 ----
@@ -260,7 +262,7 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const;
 constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
 ----
 
-However, this is not reflected in the current https://godbolt.org/z/cMzK3sdsn[behavior of major compilers], thus it is impossible to get implementation experience 
+However, this is not reflected in the current https://godbolt.org/z/cMzK3sdsn[behavior of major compilers], thus it is impossible to get implementation experience
 for such change, nor validate that the overload resolution works as desired. As consequence, we propose to change the existing overload.
 
 [source, cpp]
@@ -269,8 +271,8 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const&;
 constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
 ----
 
-Note, that standard-library implementation that ships with compiler that supports this relaxation of the overloading for the member functions,
-has freedom to preserve `const` instead of `const&` per https://eel.is/c++draft/namespace.std#6[[namespace.std] p6] in case if the behavior of this overload
+Note, that standard-library implementation that ships with a compiler that supports this relaxation of the overloading for the member functions,
+has the freedom to preserve `const` instead of `const&` per https://eel.is/c++draft/namespace.std#6[[namespace.std] p6] in case if the behavior of this overload
 is indeed the same.
 In contrast preserving `const` overload, will bake any unintended (but unlikely) difference in the behavior.
 
@@ -296,9 +298,10 @@ This reflects the behavior of the rvalue with allocator constructor for this imp
 
 The implementation experience does not cover introduction of additional alias nor preservation of `const` overload, required to preserve ABI compatibility.
 
+
 == Technical Specifications
 
-Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf[N4892]):
+Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902]):
 
 Apply following modifications to definition of `basic_string class template in [basic.string.general] General`.
 
