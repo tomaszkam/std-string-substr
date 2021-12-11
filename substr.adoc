@@ -5,9 +5,9 @@
 :source-highlighter: pygments
 
 |===
-|Document number: | P2438R0
-|Date:            | 2021-09-14
-|Project:         | Programming Language C++, Library Working Group
+|Document number: | D2438R1
+|Date:            | 2021-11-19
+|Project:         | Programming Language C++, Library Evolution Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
 
@@ -55,6 +55,17 @@ auto b = std::move(a).substr(/* */);
 
 
 |===
+
+
+== Revision history
+
+=== Revision 1
+
+* Corrected target audience (LEWG instead of LWG).
+* Included implementation experience section.
+* Discussion on change to existing `const` overload in light of https://wg21.link/p1787[P1787R6: Declarations and where to find them].
+* Expanded section of `substr` with user-suplied allocator.
+* Rebased wording on http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902].
 
 == Motivation
 
@@ -197,8 +208,9 @@ This means that invocation of this function is ill-formed for the `basic_string`
 [source, cpp]
 ----
 memory_pool pool = ...;
-std::basic_string<char, std::char_traits<char>, memory_pool_allocator<char>> s1(memory_pool_allocator<char>(pool));
-auto s2 = s1.substr();
+using pool_string = std::basic_string<char, std::char_traits<char>, memory_pool_allocator<char>>;
+pool_string s1(20, 'a', memory_pool_allocator<char>(pool));
+auto s2 = s1.substr(2, 10);
 ----
 
 This could be address by adding Allocator parameters to `substr()` overload that accepts allocator to be used as parameter:
@@ -209,8 +221,14 @@ constexpr basic_string substr(size_type pos, const Allocator& alloc) const;
 constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc) const;
 ----
 
-While the authors think that this additional feature is related to proposed changes, it is orthogonal to them and could be handled as separate paper.
-We seek LEWG guidance if that functionality should be included in the paper.
+Desired effect may be already achieved via "substring" constructor, that is also extended in this paper:
+[source, cpp]
+----
+auto s2 = pool_string(s1, 2, 10, memory_pool_allocator<char>(pool));
+----
+
+While the authors aggree that using `substr` may provide a more convinient interface,
+we belive that introduction of allocator accepting `substr` oveloads should be handled as separate paper.
 
 === Are they any other function of `std::string` that would benefit from a `&&` overload
 
@@ -232,21 +250,58 @@ For those reasons, the authors does not propose to add new overloads for `append
 
 The authors are not aware of other functions that could benefit from a `&&` overload.
 
+=== Modifying existing `const` overload
+
+
+One of the effects of the https://wg21.link/p1787[P1787R6: Declarations and where to find them] omnibus paper, is the relaxation of the rules for overloading of the member function
+based on the `cv` and `ref` qualifiers. To the best of the authors' knowledge, current wording allows the following declarations to coexist in the `basic_string` class:
+
+[source, cpp]
+----
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) const;
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
+----
+
+However, this is not reflected in the current https://godbolt.org/z/EP9Mhjs8T[behavior of major compilers], thus it is impossible to get implementation experience
+for such change, nor validate that the overload resolution works as desired. As consequence, we propose to change the existing overload.
+
+[source, cpp]
+----
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) const&;
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;
+----
+
+Note, that standard-library implementation that ships with a compiler that supports this relaxation of the overloading for the member functions,
+has the freedom to preserve `const` instead of `const&` per https://eel.is/c++draft/namespace.std#6[[namespace.std] p6] in case if the behavior of this overload
+is indeed the same.
+In contrast preserving `const` overload, will bake any unintended (but unlikely) difference in the behavior.
+
 === Concerns on ABI stability
 
-Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;` and `basic_string substr(std::size_t pos, std::size_t len) &&;` (the first change is required by the core language rules), can affect the
-mangling of the name, thus causing ABI break.
+Changing `basic_string substr(std::size_t pos, std::size_t len) const;` into `basic_string substr(std::size_t pos, std::size_t len) const&;`
+ and `basic_string substr(std::size_t pos, std::size_t len) &&;` can affect the mangling of the name, thus causing ABI break.
 
 For a library it is possible to continue to define the old symbol, so that already existing code will continue to links and work without errors.
 For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
 
-
 This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408].
+
+== Implementation Experience
+
+The changes proposed in the paper were implemented by the authors in the libcxx and passed are test in the test suite.
+The implementation of the rvalue-constructor is moving the buffer if the:
+
+  * selected substring is to long to use SSO
+  * allocators are equal (checked at runtime)
+
+This reflects the behavior of the rvalue with allocator constructor for this implementation.
+
+The implementation experience does not cover introduction of additional alias nor preservation of `const` overload, required to preserve ABI compatibility.
+
 
 == Technical Specifications
 
-Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf[N4892]):
-
+Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902]):
 
 Apply following modifications to definition of `basic_string class template in [basic.string.general] General`.
 
@@ -255,8 +310,8 @@ Apply following modifications to definition of `basic_string class template in [
 ----
 constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
 constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator());
-[underline]#constexpr basic_string( basic_string&& str, size_type pos, const Allocator& alloc = Allocator() );#
-[underline]#constexpr basic_string( basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator() );#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, const Allocator& alloc = Allocator());#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator());#
 ----
 
 and
@@ -277,8 +332,8 @@ The use of "prior the call", are not necessary for `const&`, but allow us to mer
 ----
 constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
 constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator());
-[underline]#constexpr basic_string( basic_string&& str, size_type pos, const Allocator& alloc = Allocator() );#
-[underline]#constexpr basic_string( basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator() );#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, const Allocator& alloc = Allocator());#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator());#
 ----
 
 [line-through]#_Effects_: Let `n` be `npos` for the first overload. Equivalent to: `basic_string(basic_string_view<charT, traits>(str).substr(pos, n), a)`.# +
@@ -290,7 +345,7 @@ constexpr basic_string(const basic_string& str, size_type pos, size_type n, cons
 [underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, rlen)` +
 _Throws_: `out_­of_­range` if `pos > s.size()` +
 _Remarks_: The `str` is in valid but unspecified state, after invocation of either third or fourth overload. +
-_Recommended practice_: For third and fourth overload implementations should avoid unnecessary copies and allocations, if `s.get_allocator() == a` is `true`.#
+_Recommended practice_: For third and fourth overload implementations should avoid unnecessary allocations, if `s.get_allocator() == a` is `true`.#
 
 
 Apply following changes to `[string.substr] basic_­string​::​substr`.
