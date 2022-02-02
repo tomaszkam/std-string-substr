@@ -352,7 +352,7 @@ constexpr basic_string(const basic_string& str, size_type pos, size_type n, cons
 [underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, s.data() + rlen)`. +
 _Throws_: `out_­of_­range` if `pos > s.size()`. +
 _Remarks_: In the third and fourth forms, `str` is left in a valid but unspecified state. +
-_Recommended practice_: Recommended practice: In the third and fourth forms, implementations should avoid allocation if `s.get_allocator() == a` is true.#
+_Recommended practice_: In the third and fourth forms, implementations should avoid allocation if `s.get_allocator() == a` is true.#
 
 
 Apply following changes to `[string.substr] basic_­string​::​substr`.
