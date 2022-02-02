@@ -5,9 +5,9 @@
 :source-highlighter: pygments
 
 |===
-|Document number: | D2438R1
-|Date:            | 2021-11-19
-|Project:         | Programming Language C++, Library Evolution Working Group
+|Document number: | D2438R2
+|Date:            | 2022-02-02
+|Project:         | Programming Language C++, Library Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
 
@@ -58,6 +58,13 @@ auto b = std::move(a).substr(/* */);
 
 
 == Revision history
+
+
+=== Revision 2
+
+* Target audience is now LWG.
+* Applied wording suggestion from Barry Revzin.
+* Added Annex C entry.
 
 === Revision 1
 
@@ -303,15 +310,15 @@ The implementation experience does not cover introduction of additional alias no
 
 Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902]):
 
-Apply following modifications to definition of `basic_string class template in [basic.string.general] General`.
+Apply following modifications to definition of `basic_string` class template in [basic.string.general] General.
 
 
 [subs=+quotes]
 ----
 constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
 constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator());
-[underline]#constexpr basic_string(basic_string&& str, size_type pos, const Allocator& alloc = Allocator());#
-[underline]#constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator());#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, const Allocator& a = Allocator());#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& a = Allocator());#
 ----
 
 and
@@ -322,30 +329,30 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [unde
 [underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
 ----
 
-Replace the definition of the corresponding constructor `[string.cons] Constructors and assignment operators`
+Replace the definition of the corresponding constructor [string.cons] Constructors and assignment operators
 
 Wording note:
 We no longer define this constructors in terms of being equivalent to corresponding construction from `basic_string_view`, as that would prevent reuse of the memory, that we want to allow.
-The use of "prior the call", are not necessary for `const&`, but allow us to merge the wording.
+The use of "prior to this call", are not necessary for `const&`, but allow us to merge the wording.
 
 [subs=+quotes]
 ----
 constexpr basic_string(const basic_string& str, size_type pos, const Allocator& a = Allocator());
 constexpr basic_string(const basic_string& str, size_type pos, size_type n, const Allocator& a = Allocator());
-[underline]#constexpr basic_string(basic_string&& str, size_type pos, const Allocator& alloc = Allocator());#
-[underline]#constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& alloc = Allocator());#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, const Allocator& a = Allocator());#
+[underline]#constexpr basic_string(basic_string&& str, size_type pos, size_type n, const Allocator& a = Allocator());#
 ----
 
 [line-through]#_Effects_: Let `n` be `npos` for the first overload. Equivalent to: `basic_string(basic_string_view<charT, traits>(str).substr(pos, n), a)`.# +
 [underline]#Let:#
 
-	* [underline]#`s` be the value of `str` prior this call,#
-	* [underline]#`rlen` be smaller of `n` and `s.size() - pos`, for overloads that define parameter `n`, and `s.size() - pos` otherwise.#
+	* [underline]#`s` be the value of `str` prior to this call,#
+	* [underline]#`rlen` be `pos + min(n, s.size() - pos)` for overloads with parameter `n`, and `s.size()` otherwise.#
 
-[underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, rlen)` +
-_Throws_: `out_­of_­range` if `pos > s.size()` +
-_Remarks_: The `str` is in valid but unspecified state, after invocation of either third or fourth overload. +
-_Recommended practice_: For third and fourth overload implementations should avoid unnecessary allocations, if `s.get_allocator() == a` is `true`.#
+[underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, s.data() + rlen)`. +
+_Throws_: `out_­of_­range` if `pos > s.size()`. +
+_Remarks_: In the third and fourth forms, `str` is left in a valid but unspecified state. +
+_Recommended practice_: Recommended practice: In the third and fourth forms, implementations should avoid allocation if `s.get_allocator() == a` is true.#
 
 
 Apply following changes to `[string.substr] basic_­string​::​substr`.
@@ -369,6 +376,24 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [unde
 [underline]#_Effects_: Equivalent to: `return basic_string(std::move(*this), pos, n);`.#
 
 
+Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020 
+
+[underline]#[diff.cpp20.strings] [strings]: strings library# +
+
+[underline]#*Affected subclauses:* [string.classes]# +
+[underline]#*Change:* Additional rvalue overloads for `substr` member function and corresponding constructor.# +
+[underline]#*Rationale*: Improve efficiency of operations on xvalues.# +
+[underline]#*Effect on original feature:* Valid {cpp} 2020 code that created an substring by calling `substr` (or corresponding constructor) on `xvalue` expression with type `S` that is specialization of `basic_string` may change meaning in this revision of {cpp}.#
+
+[subs=+quotes]
+----
+[underline]#std::string s1 = "some long string that forces allocation", s2 = s1;#
+[underline]#std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modiifed#
+[underline]#std::string s3(std::move(s1, 10, 5); // s2 is in valid but unspecified state after this call, previously was not modiifed#
+----
+
+
 == Acknowledgements
 
+Barry Revzin for wording suggestions.
 A big thank you to all those giving feedback for this paper.

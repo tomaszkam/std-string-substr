@@ -452,15 +452,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Document number:</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D2438R1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D2438R2</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Date:</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2021-11-18</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2022-02-02</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Project:</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Programming Language C++, Library Evolution Working Group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Programming Language C++, Library Working Group</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Reply-to:</p></td>
@@ -533,20 +533,39 @@ auto b = std::move(a).substr(/* */);</code></pre>
 <h2 id="_revision_history">2. Revision history</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_revision_1">2.1. Revision 1</h3>
+<h3 id="_revision_2">2.1. Revision 2</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>Corrected target audience (LEWG instead of LWG)</p>
+<p>Target audience is now LWG.</p>
 </li>
 <li>
-<p>Included implementation experience section</p>
+<p>Applied wording suggestion from Barry Revzin.</p>
 </li>
 <li>
-<p>Discussion on change to existing <code>const</code> overload in light of <a href="https://wg21.link/p1787">P1787R6: Declarations and where to find them</a></p>
+<p>Added Annex C entry.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_revision_1">2.2. Revision 1</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Corrected target audience (LEWG instead of LWG).</p>
+</li>
+<li>
+<p>Included implementation experience section.</p>
+</li>
+<li>
+<p>Discussion on change to existing <code>const</code> overload in light of <a href="https://wg21.link/p1787">P1787R6: Declarations and where to find them</a>.</p>
 </li>
 <li>
 <p>Expanded section of <code>substr</code> with user-suplied allocator.</p>
+</li>
+<li>
+<p>Rebased wording on <a href="http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf">N4902</a>.</p>
 </li>
 </ul>
 </div>
@@ -755,8 +774,8 @@ constexpr basic_string substr(size_type pos, size_type n, const Allocator&amp; a
 </div>
 </div>
 <div class="paragraph">
-<p>While the authors aggree that using <code>substr</code> may provide a more convinient interface, we believe that providing additional <code>substr</code> overload that accepts allocator,
-is orthogonal to proposed changes and should be handled as separate paper.</p>
+<p>While the authors aggree that using <code>substr</code> may provide a more convinient interface,
+we belive that introduction of allocator accepting <code>substr</code> oveloads should be handled as separate paper.</p>
 </div>
 </div>
 <div class="sect2">
@@ -787,8 +806,8 @@ This would make the implementation of <code>append</code> less obvious, and the 
 <div class="sect2">
 <h3 id="_modifying_existing_const_overload">4.4. Modifying existing <code>const</code> overload</h3>
 <div class="paragraph">
-<p>One of the effects of the <a href="https://wg21.link/p1787">P1787R6: Declarations and where to find them</a> omnibus paper, is relaxation of the rules for overloading of the member function
-based on the <code>cv</code> and <code>ref</code> qualifiers. To best of the authors knowlede, current wording allows following declarations to coexits in the <code>basic_string</code> class:</p>
+<p>One of the effects of the <a href="https://wg21.link/p1787">P1787R6: Declarations and where to find them</a> omnibus paper, is the relaxation of the rules for overloading of the member function
+based on the <code>cv</code> and <code>ref</code> qualifiers. To the best of the authors' knowledge, current wording allows the following declarations to coexist in the <code>basic_string</code> class:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -797,7 +816,7 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) &amp;&amp;;
 </div>
 </div>
 <div class="paragraph">
-<p>However, this is not reflected in the current <a href="https://godbolt.org/z/cMzK3sdsn">behavior of major compilers</a>, thus it is impossible to get implementation experience
+<p>However, this is not reflected in the current <a href="https://godbolt.org/z/EP9Mhjs8T">behavior of major compilers</a>, thus it is impossible to get implementation experience
 for such change, nor validate that the overload resolution works as desired. As consequence, we propose to change the existing overload.</p>
 </div>
 <div class="listingblock">
@@ -807,8 +826,8 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) &amp;&amp;;
 </div>
 </div>
 <div class="paragraph">
-<p>Note, that standard-library implementation that ships with compiler that supports this relaxation of the overloading for the member functions,
-has freedom to preserve <code>const</code> instead of <code>const&amp;</code> per <a href="https://eel.is/c++draft/namespace.std#6">[namespace.std</a> p6] in case if the behavior of this overload
+<p>Note, that standard-library implementation that ships with a compiler that supports this relaxation of the overloading for the member functions,
+has the freedom to preserve <code>const</code> instead of <code>const&amp;</code> per <a href="https://eel.is/c++draft/namespace.std#6">[namespace.std</a> p6] in case if the behavior of this overload
 is indeed the same.
 In contrast preserving <code>const</code> overload, will bake any unintended (but unlikely) difference in the behavior.</p>
 </div>
@@ -842,10 +861,12 @@ The implementation of the rvalue-constructor is moving the buffer if the:</p>
 <p>selected substring is to long to use SSO</p>
 </li>
 <li>
-<p>allocators are equal (checked at runtime)
-This reflects the behavior of the move constructor for this implementation.</p>
+<p>allocators are equal (checked at runtime)</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>This reflects the behavior of the rvalue with allocator constructor for this implementation.</p>
 </div>
 <div class="paragraph">
 <p>The implementation experience does not cover introduction of additional alias nor preservation of <code>const</code> overload, required to preserve ABI compatibility.</p>
@@ -856,17 +877,17 @@ This reflects the behavior of the move constructor for this implementation.</p>
 <h2 id="_technical_specifications">6. Technical Specifications</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Suggested wording (against <a href="http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4892.pdf">N4892</a>):</p>
+<p>Suggested wording (against <a href="http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf">N4902</a>):</p>
 </div>
 <div class="paragraph">
-<p>Apply following modifications to definition of <code>basic_string class template in [basic.string.general] General</code>.</p>
+<p>Apply following modifications to definition of <code>basic_string</code> class template in [basic.string.general] General.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre>constexpr basic_string(const basic_string&amp; str, size_type pos, const Allocator&amp; a = Allocator());
 constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, const Allocator&amp; a = Allocator());
-<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, const Allocator&amp; alloc = Allocator());</span>
-<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, size_type n, const Allocator&amp; alloc = Allocator());</span></pre>
+<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, const Allocator&amp; a = Allocator());</span>
+<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, size_type n, const Allocator&amp; a = Allocator());</span></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -879,19 +900,19 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 </div>
 </div>
 <div class="paragraph">
-<p>Replace the definition of the corresponding constructor <code>[string.cons] Constructors and assignment operators</code></p>
+<p>Replace the definition of the corresponding constructor [string.cons] Constructors and assignment operators</p>
 </div>
 <div class="paragraph">
 <p>Wording note:
 We no longer define this constructors in terms of being equivalent to corresponding construction from <code>basic_string_view</code>, as that would prevent reuse of the memory, that we want to allow.
-The use of "prior the call", are not necessary for <code>const&amp;</code>, but allow us to merge the wording.</p>
+The use of "prior to this call", are not necessary for <code>const&amp;</code>, but allow us to merge the wording.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre>constexpr basic_string(const basic_string&amp; str, size_type pos, const Allocator&amp; a = Allocator());
 constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, const Allocator&amp; a = Allocator());
-<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, const Allocator&amp; alloc = Allocator());</span>
-<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, size_type n, const Allocator&amp; alloc = Allocator());</span></pre>
+<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, const Allocator&amp; a = Allocator());</span>
+<span class="underline">constexpr basic_string(basic_string&amp;&amp; str, size_type pos, size_type n, const Allocator&amp; a = Allocator());</span></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -901,18 +922,18 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 <div class="ulist">
 <ul>
 <li>
-<p><span class="underline"><code>s</code> be the value of <code>str</code> prior this call,</span></p>
+<p><span class="underline"><code>s</code> be the value of <code>str</code> prior to this call,</span></p>
 </li>
 <li>
-<p><span class="underline"><code>rlen</code> be smaller of <code>n</code> and <code>s.size() - pos</code>, for overloads that define parameter <code>n</code>, and <code>s.size() - pos</code> otherwise.</span></p>
+<p><span class="underline"><code>rlen</code> be <code>pos + min(n, s.size() - pos)</code> for overloads with parameter <code>n</code>, and <code>s.size()</code> otherwise.</span></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p><span class="underline"><em>Effects</em>: Constructs an object whose initial value is the range <code>[s.data() + pos, rlen)</code><br>
-<em>Throws</em>: <code>out_­of_­range</code> if <code>pos &gt; s.size()</code><br>
-<em>Remarks</em>: The <code>str</code> is in valid but unspecified state, after invocation of either third or fourth overload.<br>
-<em>Recommended practice</em>: For third and fourth overload implementations should avoid unnecessary copies and allocations, if <code>s.get_allocator() == a</code> is <code>true</code>.</span></p>
+<p><span class="underline"><em>Effects</em>: Constructs an object whose initial value is the range <code>[s.data() + pos, s.data() + rlen)</code>.<br>
+<em>Throws</em>: <code>out_­of_­range</code> if <code>pos &gt; s.size()</code>.<br>
+<em>Remarks</em>: In the third and fourth forms, <code>str</code> is left in a valid but unspecified state.<br>
+<em>Recommended practice</em>: Recommended practice: In the third and fourth forms, implementations should avoid allocation if <code>s.get_allocator() == a</code> is true.</span></p>
 </div>
 <div class="paragraph">
 <p>Apply following changes to <code>[string.substr] basic_­string​::​substr</code>.</p>
@@ -936,13 +957,33 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 <div class="paragraph">
 <p><span class="underline"><em>Effects</em>: Equivalent to: <code>return basic_string(std::move(*this), pos, n);</code>.</span></p>
 </div>
+<div class="paragraph">
+<p>Add following section under [diff.cpp20.general] C&#43;&#43; and ISO C&#43;&#43; 2020</p>
+</div>
+<div class="paragraph">
+<p><span class="underline">[diff.cpp20.strings] [strings]: strings library</span><br></p>
+</div>
+<div class="paragraph">
+<p><span class="underline"><strong>Affected subclauses:</strong> [string.classes]</span><br>
+<span class="underline"><strong>Change:</strong> Additional rvalue overloads for <code>substr</code> member function and corresponding constructor.</span><br>
+<span class="underline"><strong>Rationale</strong>: Improve efficiency of operations on xvalues.</span><br>
+<span class="underline"><strong>Effect on original feature:</strong> Valid C&#43;&#43; 2020 code that created an substring by calling <code>substr</code> (or corresponding constructor) on <code>xvalue</code> expression with type <code>S</code> that is specialization of <code>basic_string</code> may change meaning in this revision of C&#43;&#43;.</span></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre><span class="underline">std::string s1 = "some long string that forces allocation", s2 = s1;</span>
+<span class="underline">std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modiifed</span>
+<span class="underline">std::string s3(std::move(s1, 10, 5); // s2 is in valid but unspecified state after this call, previously was not modiifed</span></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_acknowledgements">7. Acknowledgements</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A big thank you to all those giving feedback for this paper.</p>
+<p>Barry Revzin for wording suggestions.
+A big thank you to all those giving feedback for this paper.</p>
 </div>
 </div>
 </div>
