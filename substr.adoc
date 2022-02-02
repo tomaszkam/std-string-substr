@@ -64,6 +64,7 @@ auto b = std::move(a).substr(/* */);
 
 * Target audience is now LWG.
 * Applied wording suggestion from Barry Revzin.
+* Added Annex C entry.
 
 === Revision 1
 
@@ -373,6 +374,23 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [unde
 ----
 
 [underline]#_Effects_: Equivalent to: `return basic_string(std::move(*this), pos, n);`.#
+
+
+Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020 
+
+[underline]#[diff.cpp20.strings] [strings]: strings library# +
+
+[underline]#*Affected subclauses:* [string.classes]# +
+[underline]#*Change:* Additional rvalue overloads for `substr` member function and corresponding constructor.# +
+[underline]#*Rationale*: Improve efficiency of operations on xvalues.# +
+[underline]#*Effect on original feature:* Valid {cpp} 2020 code that created an substring by calling `substr` (or corresponding constructor) on `xvalue` expression with type `S` that is specialization of `basic_string` may change meaning in this revision of {cpp}.#
+
+[subs=+quotes]
+----
+[underline]#std::string s1 = "some long string that forces allocation", s2 = s1;#
+[underline]#std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modiifed#
+[underline]#std::string s3(std::move(s1, 10, 5); // s2 is in valid but unspecified state after this call, previously was not modiifed#
+----
 
 
 == Acknowledgements

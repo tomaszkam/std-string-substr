@@ -542,6 +542,9 @@ auto b = std::move(a).substr(/* */);</code></pre>
 <li>
 <p>Applied wording suggestion from Barry Revzin.</p>
 </li>
+<li>
+<p>Added Annex C entry.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -953,6 +956,25 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 </div>
 <div class="paragraph">
 <p><span class="underline"><em>Effects</em>: Equivalent to: <code>return basic_string(std::move(*this), pos, n);</code>.</span></p>
+</div>
+<div class="paragraph">
+<p>Add following section under [diff.cpp20.general] C&#43;&#43; and ISO C&#43;&#43; 2020</p>
+</div>
+<div class="paragraph">
+<p><span class="underline">[diff.cpp20.strings] [strings]: strings library</span><br></p>
+</div>
+<div class="paragraph">
+<p><span class="underline"><strong>Affected subclauses:</strong> [string.classes]</span><br>
+<span class="underline"><strong>Change:</strong> Additional rvalue overloads for <code>substr</code> member function and corresponding constructor.</span><br>
+<span class="underline"><strong>Rationale</strong>: Improve efficiency of operations on xvalues.</span><br>
+<span class="underline"><strong>Effect on original feature:</strong> Valid C&#43;&#43; 2020 code that created an substring by calling <code>substr</code> (or corresponding constructor) on <code>xvalue</code> expression with type <code>S</code> that is specialization of <code>basic_string</code> may change meaning in this revision of C&#43;&#43;.</span></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre><span class="underline">std::string s1 = "some long string that forces allocation", s2 = s1;</span>
+<span class="underline">std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modiifed</span>
+<span class="underline">std::string s3(std::move(s1, 10, 5); // s2 is in valid but unspecified state after this call, previously was not modiifed</span></pre>
+</div>
 </div>
 </div>
 </div>
