@@ -382,7 +382,7 @@ Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020
 
 [underline]#*Affected subclauses:* [string.classes]# +
 [underline]#*Change:* Additional rvalue overloads for `substr` member function and corresponding constructor.# +
-[underline]#*Rationale*: Improve efficiency of operations on xvalues.# +
+[underline]#*Rationale*: Improve efficiency of operations on rvalues.# +
 [underline]#*Effect on original feature:* Valid {cpp} 2020 code that created an substring by calling `substr` (or corresponding constructor) on `xvalue` expression with type `S` that is specialization of `basic_string` may change meaning in this revision of {cpp}.#
 
 [subs=+quotes]
