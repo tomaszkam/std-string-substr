@@ -31,8 +31,8 @@ auto foo() -> std::string;
 
 auto b = foo().substr(/* */);
 ----
-| `foo()` returns a temporary `std::string`. `.substr` creates a new string and copies the relevant content. At last the temporary string returned by foo is released.
-| `foo()` returns a `std::string`. `.substr` implementation can reuse the storage of the string returned by foo and leave it in a valid but unspecified state. At last the temporary string returned by `foo()` is released.
+| `foo()` returns a temporary `std::string`. `.substr` creates a new string and copies the relevant content. At last, the temporary string returned by foo is released.
+| `foo()` returns a `std::string`. `.substr` implementation can reuse the storage of the string returned by foo and leave it in a valid but unspecified state. At last, the temporary string returned by `foo()` is released.
 
 
 a|
@@ -40,8 +40,8 @@ a|
 ----
 auto a = std::string(/* */).substr(/* */);
 ----
-| A temporary `std::string` is created, on that instance `.substr` creates a new string and copies the relevant content. At last the temporary string is released.
-| A temporary `std::string` is created, on that instance `.substr` implementation can reuse the storage and leave the temporary string in a valid but unspecified state. At last the temporary string is released.
+| A temporary `std::string` is created, on that instance `.substr` creates a new string and copies the relevant content. At last, the temporary string is released.
+| A temporary `std::string` is created, on that instance `.substr` implementation can reuse the storage and leave the temporary string in a valid but unspecified state. At last, the temporary string is released.
 
 
 a|
@@ -71,7 +71,7 @@ auto b = std::move(a).substr(/* */);
 * Corrected target audience (LEWG instead of LWG).
 * Included implementation experience section.
 * Discussion on change to existing `const` overload in light of https://wg21.link/p1787[P1787R6: Declarations and where to find them].
-* Expanded section of `substr` with user-suplied allocator.
+* Expanded section of `substr` with user-supplied allocator.
 * Rebased wording on http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902].
 
 == Motivation
@@ -106,9 +106,9 @@ If `std::string` would have an overload for `substr() &&`, in both cases the sta
 
 It is true that adding a new overload increases the already extremely high number of member functions of `std::string`.
 
-On the other hand most users do not need to know it's existence to take advantage of the provided optimization.
+On the other hand, most users do not need to know its existence to take advantage of the provided optimization.
 
-Thus this paper is not extending API surface, there is no names or behavior to be learned by user, and we just get extension that follows established language convection.
+Thus this paper is not extending API surface, there is no names or behavior to be learned by user, and we just get an extension that follows established language convection.
 
 For users aware of the overload, they can move a string in order to "steal" it's storage in a natural way:
 
@@ -167,7 +167,7 @@ std::string bar = std::move(foo).substr(...);
 ----
 
 
-Until {cpp}20, `foo` wont change it's value, after this paper, the state of `foo` would be in a "valid but unspecified state".
+Until {cpp}20, `foo` won't change it's value, after this paper, the state of `foo` would be in a "valid but unspecified state".
 
 While a breaking change is generally bad:
 
@@ -185,7 +185,7 @@ constexpr basic_string( basic_string&& other, size_type pos, size_type count, co
 === Note on the propagation of the allocator
 
 `basic_string` is one of the allocator-container, which means that any memory resource used by this class need to be acquired and released to from the associated allocator instance.
-This imposes some limitation on the behavior of the proposed overload.
+This imposes some limitations on the behavior of the proposed overload.
 For example in:
 
 [source, cpp]
@@ -220,7 +220,7 @@ pool_string s1(20, 'a', memory_pool_allocator<char>(pool));
 auto s2 = s1.substr(2, 10);
 ----
 
-This could be address by adding Allocator parameters to `substr()` overload that accepts allocator to be used as parameter:
+This could be addressed by adding Allocator parameters to `substr()` overload that accepts allocator to be used as parameter:
 
 [source, cpp]
 ----
@@ -229,13 +229,14 @@ constexpr basic_string substr(size_type pos, size_type n, const Allocator& alloc
 ----
 
 Desired effect may be already achieved via "substring" constructor, that is also extended in this paper:
+
 [source, cpp]
 ----
 auto s2 = pool_string(s1, 2, 10, memory_pool_allocator<char>(pool));
 ----
 
-While the authors aggree that using `substr` may provide a more convinient interface,
-we belive that introduction of allocator accepting `substr` oveloads should be handled as separate paper.
+While the authors agree that using `substr` may provide a more convenient interface,
+we believe that introduction of allocator accepting `substr` overloads should be handled as a separate paper.
 
 === Are they any other function of `std::string` that would benefit from a `&&` overload
 
@@ -260,8 +261,8 @@ The authors are not aware of other functions that could benefit from a `&&` over
 === Modifying existing `const` overload
 
 
-One of the effects of the https://wg21.link/p1787[P1787R6: Declarations and where to find them] omnibus paper, is the relaxation of the rules for overloading of the member function
-based on the `cv` and `ref` qualifiers. To the best of the authors' knowledge, current wording allows the following declarations to coexist in the `basic_string` class:
+One of the effects of the https://wg21.link/p1787[P1787R6: Declarations and where to find them] omnibus paper, is the relaxation of the rules for overloading of the member function based on the `cv` and `ref` qualifiers.
+To the best of the authors' knowledge, current wording allows the following declarations to coexist in the `basic_string` class:
 
 [source, cpp]
 ----
@@ -298,7 +299,7 @@ This is not a novel technique, as it has been explained by the ARG (ABI Review g
 The changes proposed in the paper were implemented by the authors in the libcxx and passed are test in the test suite.
 The implementation of the rvalue-constructor is moving the buffer if the:
 
-  * selected substring is to long to use SSO
+  * selected substring is too long to use SSO
   * allocators are equal (checked at runtime)
 
 This reflects the behavior of the rvalue with allocator constructor for this implementation.
@@ -376,7 +377,7 @@ constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [unde
 [underline]#_Effects_: Equivalent to: `return basic_string(std::move(*this), pos, n);`.#
 
 
-Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020 
+Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020
 
 [underline]#[diff.cpp20.strings] [strings]: strings library# +
 
@@ -388,8 +389,8 @@ Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020
 [subs=+quotes]
 ----
 [underline]#std::string s1 = "some long string that forces allocation", s2 = s1;#
-[underline]#std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modiifed#
-[underline]#std::string s3(std::move(s1, 10, 5); // s2 is in valid but unspecified state after this call, previously was not modiifed#
+[underline]#std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modified#
+[underline]#std::string s3(std::move(s2), 10, 5); // s2 is in valid but unspecified state after this call, previously was not modified#
 ----
 
 
