@@ -6,7 +6,7 @@
 
 |===
 |Document number: | D2438R2
-|Date:            | 2022-02-02
+|Date:            | 2022-02-03
 |Project:         | Programming Language C++, Library Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
@@ -65,6 +65,7 @@ auto b = std::move(a).substr(/* */);
 * Target audience is now LWG.
 * Applied wording suggestion from Barry Revzin.
 * Added Annex C entry.
+* Corrected Working Draft link.
 
 === Revision 1
 
@@ -309,7 +310,7 @@ The implementation experience does not cover introduction of additional alias no
 
 == Technical Specifications
 
-Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4902.pdf[N4902]):
+Suggested wording (against http://open-std.org/jtc1/sc22/wg21/docs/papers/2021/n4901.pdf[N4901]):
 
 Apply following modifications to definition of `basic_string` class template in [basic.string.general] General.
 
