@@ -64,8 +64,10 @@ auto b = std::move(a).substr(/* */);
 
 * Target audience is now LWG.
 * Applied wording suggestion from Barry Revzin.
+* Applied wording suggestion from LWG review.
 * Added Annex C entry.
 * Corrected Working Draft link.
+* Added section of feature test macro.
 
 === Revision 1
 
@@ -294,6 +296,11 @@ For a library it is possible to continue to define the old symbol, so that alrea
 For example, it is possible to use asm to define the old mangled name as an alias for the new `const&` symbol.
 
 This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like https://wg21.link/p0408[P0408].
+
+=== No feature test macro
+
+We do not propose to include feature test macro for this paper, as the code that would benefit from proposed change (`std::move(s).substr(2, 3)`), is already well formed and have same effects (modulo state of `s`).
+Thus program that targets multiple modes does not need to differentiate their code depending on presence of this feature.
 
 == Implementation Experience
 

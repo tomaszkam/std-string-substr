@@ -543,10 +543,16 @@ auto b = std::move(a).substr(/* */);</code></pre>
 <p>Applied wording suggestion from Barry Revzin.</p>
 </li>
 <li>
+<p>Applied wording suggestion from LWG review.</p>
+</li>
+<li>
 <p>Added Annex C entry.</p>
 </li>
 <li>
 <p>Corrected Working Draft link.</p>
+</li>
+<li>
+<p>Added section of feature test macro.</p>
 </li>
 </ul>
 </div>
@@ -847,6 +853,13 @@ For example, it is possible to use asm to define the old mangled name as an alia
 </div>
 <div class="paragraph">
 <p>This is not a novel technique, as it has been explained by the ARG (ABI Review group), and similar breaks have already taken place for other papers, like <a href="https://wg21.link/p0408">P0408</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_no_feature_test_macro">4.6. No feature test macro</h3>
+<div class="paragraph">
+<p>We do not propose to include feature test macro for this paper, as the code that would benefit from proposed change (<code>std::move(s).substr(2, 3)</code>), is already well formed and have same effects (modulo state of <code>s</code>).
+Thus program that targets multiple modes does not need to differentiate their code depending on presence of this feature.</p>
 </div>
 </div>
 </div>
