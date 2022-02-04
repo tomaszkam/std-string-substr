@@ -456,7 +456,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Date:</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2022-02-03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2022-02-04</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Project:</p></td>
@@ -898,7 +898,7 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>constexpr basic_string substr(size_type pos = 0, size_type n = npos) const <span class="underline">&amp;</span>;
+<pre>constexpr basic_string substr(size_type pos = 0, size_type n = npos) <span class="line-through">const</span> <span class="underline">const &amp;</span>;
 <span class="underline">constexpr basic_string substr(size_type pos = 0, size_type n = npos) &amp;&amp;;</span></pre>
 </div>
 </div>
@@ -928,22 +928,22 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 <p><span class="underline"><code>s</code> be the value of <code>str</code> prior to this call,</span></p>
 </li>
 <li>
-<p><span class="underline"><code>rlen</code> be <code>pos + min(n, s.size() - pos)</code> for overloads with parameter <code>n</code>, and <code>s.size()</code> otherwise.</span></p>
+<p><span class="underline"><code>rlen</code> be <code>pos + min(n, s.size() - pos)</code> for the overloads with parameter <code>n</code>, and <code>s.size()</code> otherwise.</span></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p><span class="underline"><em>Effects</em>: Constructs an object whose initial value is the range <code>[s.data() + pos, s.data() + rlen)</code>.<br>
 <em>Throws</em>: <code>out_­of_­range</code> if <code>pos &gt; s.size()</code>.<br>
-<em>Remarks</em>: In the third and fourth forms, <code>str</code> is left in a valid but unspecified state.<br>
-<em>Recommended practice</em>: In the third and fourth forms, implementations should avoid allocation if <code>s.get_allocator() == a</code> is true.</span></p>
+<em>Remarks</em>: For the overloads with a <code>basic_string&amp;&amp;</code> parameter, <code>str</code> is left in a valid but unspecified state.<br>
+<em>Recommended practice</em>: For the overloads with a <code>basic_string&amp;&amp;</code> parameter, implementations should avoid allocation if <code>s.get_allocator() == a</code> is true.</span></p>
 </div>
 <div class="paragraph">
 <p>Apply following changes to <code>[string.substr] basic_­string​::​substr</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>constexpr basic_string substr(size_type pos = 0, size_type n = npos) const <span class="underline">&amp;</span>;</pre>
+<pre>constexpr basic_string substr(size_type pos = 0, size_type n = npos) <span class="line-through">const</span> <span class="underline">const &amp;</span>;</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -968,15 +968,17 @@ constexpr basic_string(const basic_string&amp; str, size_type pos, size_type n, 
 </div>
 <div class="paragraph">
 <p><span class="underline"><strong>Affected subclauses:</strong> [string.classes]</span><br>
-<span class="underline"><strong>Change:</strong> Additional rvalue overloads for <code>substr</code> member function and corresponding constructor.</span><br>
+<span class="underline"><strong>Change:</strong> Additional rvalue overload for the <code>substr</code> member function and the corresponding constructor.</span><br>
 <span class="underline"><strong>Rationale</strong>: Improve efficiency of operations on rvalues.</span><br>
-<span class="underline"><strong>Effect on original feature:</strong> Valid C&#43;&#43; 2020 code that created an substring by calling <code>substr</code> (or corresponding constructor) on <code>xvalue</code> expression with type <code>S</code> that is specialization of <code>basic_string</code> may change meaning in this revision of C&#43;&#43;.</span></p>
+<span class="underline"><strong>Effect on original feature:</strong> Valid C&#43;&#43; 2020 code that created a substring by calling <code>substr</code> (or the corresponding constructor) on an xvalue expression with type <code>S</code> that is a specialization of <code>basic_string</code> may change meaning in this revision of C&#43;&#43;.</span></p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre><span class="underline">std::string s1 = "some long string that forces allocation", s2 = s1;</span>
-<span class="underline">std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modified</span>
-<span class="underline">std::string s3(std::move(s2), 10, 5); // s2 is in valid but unspecified state after this call, previously was not modified</span></pre>
+<span class="underline">std::move(s1).substr(10, 5);</span>
+<span class="underline">assert(s1 == s2); // unspecified, previously guaranteed to be true</span>
+<span class="underline">std::string s3(std::move(s2), 10, 5);</span>
+<span class="underline">assert(s1 == s2); // unspecified, previously guaranteed to be true</span></pre>
 </div>
 </div>
 </div>

@@ -6,7 +6,7 @@
 
 |===
 |Document number: | D2438R2
-|Date:            | 2022-02-03
+|Date:            | 2022-02-04
 |Project:         | Programming Language C++, Library Working Group
 |Reply-to:        | federico.kircheis@gmail.com, tomaszkam@gmail.com
 |===
@@ -327,7 +327,7 @@ and
 
 [subs=+quotes]
 ----
-constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [underline]#&#;
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) [line-through]#const# [underline]#const &#;
 [underline]#constexpr basic_string substr(size_type pos = 0, size_type n = npos) &&;#
 ----
 
@@ -349,12 +349,12 @@ constexpr basic_string(const basic_string& str, size_type pos, size_type n, cons
 [underline]#Let:#
 
 	* [underline]#`s` be the value of `str` prior to this call,#
-	* [underline]#`rlen` be `pos + min(n, s.size() - pos)` for overloads with parameter `n`, and `s.size()` otherwise.#
+	* [underline]#`rlen` be `pos + min(n, s.size() - pos)` for the overloads with parameter `n`, and `s.size()` otherwise.#
 
 [underline]#_Effects_: Constructs an object whose initial value is the range `[s.data() + pos, s.data() + rlen)`. +
 _Throws_: `out_­of_­range` if `pos > s.size()`. +
-_Remarks_: In the third and fourth forms, `str` is left in a valid but unspecified state. +
-_Recommended practice_: In the third and fourth forms, implementations should avoid allocation if `s.get_allocator() == a` is true.#
+_Remarks_: For the overloads with a `basic_string&&` parameter, `str` is left in a valid but unspecified state. +
+_Recommended practice_: For the overloads with a `basic_string&&` parameter, implementations should avoid allocation if `s.get_allocator() == a` is true.#
 
 
 Apply following changes to `[string.substr] basic_­string​::​substr`.
@@ -362,7 +362,7 @@ Apply following changes to `[string.substr] basic_­string​::​substr`.
 
 [subs=+quotes]
 ----
-constexpr basic_string substr(size_type pos = 0, size_type n = npos) const [underline]#&#;
+constexpr basic_string substr(size_type pos = 0, size_type n = npos) [line-through]#const# [underline]#const &#;
 ----
 
 [line-through]#_Effects_: Determines the effective length `rlen` of the string to copy as the smaller of n and `size() - pos`.# +
@@ -383,15 +383,18 @@ Add following section under [diff.cpp20.general] {cpp} and ISO {cpp} 2020
 [underline]#[diff.cpp20.strings] [strings]: strings library# +
 
 [underline]#*Affected subclauses:* [string.classes]# +
-[underline]#*Change:* Additional rvalue overloads for `substr` member function and corresponding constructor.# +
+[underline]#*Change:* Additional rvalue overload for the `substr` member function and the corresponding constructor.# +
 [underline]#*Rationale*: Improve efficiency of operations on rvalues.# +
-[underline]#*Effect on original feature:* Valid {cpp} 2020 code that created an substring by calling `substr` (or corresponding constructor) on `xvalue` expression with type `S` that is specialization of `basic_string` may change meaning in this revision of {cpp}.#
+[underline]#*Effect on original feature:* Valid {cpp} 2020 code that created a substring by calling `substr` (or the corresponding constructor) on an xvalue expression with type `S` that is a specialization of `basic_string` may change meaning in this revision of {cpp}.#
 
 [subs=+quotes]
 ----
 [underline]#std::string s1 = "some long string that forces allocation", s2 = s1;#
-[underline]#std::move(s1).substr(10, 5); // s1 is in valid but unspecified state after this call, previously was not modified#
-[underline]#std::string s3(std::move(s2), 10, 5); // s2 is in valid but unspecified state after this call, previously was not modified#
+[underline]#std::move(s1).substr(10, 5);#
+[underline]#assert(s1 == s2); // unspecified, previously guaranteed to be true#
+[underline]#std::string s3(std::move(s2), 10, 5);#
+[underline]#assert(s1 == s2); // unspecified, previously guaranteed to be true#
+
 ----
 
 
